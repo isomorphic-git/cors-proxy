@@ -60,31 +60,23 @@ async function service (req, res) {
     let html = `<!DOCTYPE html>
     <html>
       <title>@isomorphic-git/cors-proxy</title>
-      <h1> <a href="https://npmjs.org/package/${pkg.name}">@isomorphic-git/cors-proxy</a> </h1>
-      This is the software running on https://git-cors-proxy.now.sh, a free service for users of isomorphic-git so you can clone and push repos in the browser.
-      It is derived from <a href="https://github.com/wmhilton/cors-buster">cors-buster</a> with added restrictions to prevent abuse.
+      <h1>@isomorphic-git/cors-proxy</h1>
+      <p>This is the server software that runs on <a href="https://isomorphic-git-cors-proxy.cleverapps.io/">https://isomorphic-git-cors-proxy.cleverapps.io</a>
+         &ndash; a free service (generously sponsored by <a href="https://www.clever-cloud.com/">Clever Cloud</a>)
+         for users of <a href="https://isomorphic-git.github.io">isomorphic-git</a> that enables cloning and pushing repos in the browser.</p>
+      <p>The source code is hosted on Github at <a href="https://github.com/isomorphic-git/cors-proxy">https://github.com/isomorphic-git/cors-proxy</a></p>
+      <p>It can also be installed from npm with <code>npm install <a href="https://npmjs.org/package/${pkg.name}">@isomorphic-git/cors-proxy</a></code></p>
+
       <h2>Terms of Use</h2>
       <p><b>This free service is provided to you AS IS with no guarantees.
       By using this free service, you promise not to use excessive amounts of bandwidth.
-      This server can only support 50 gigabytes of data / month.
-      Please clone responsibly.</b></p>
+      </b></p>
 
       <p><b>If you are cloning or pushing large amounts of data your IP address may be banned.
-      Please run your own instance of the software (or <a href="https://opencollective.com/isomorphic-git">donate money</a> to isomorphic-git)
-      if you need to make heavy use this service.</b></p>
+      Please run your own instance of the software if you need to make heavy use this service.</b></p>
 
       <h2>Allowed Origins</h2>
       This proxy allows git clone / fetch / push / getRemoteInfo requests from these domains: <code>${process.env.ALLOW_ORIGIN || '*'}</code>
-
-      <h2>Authenticity</h2>
-      This is a publicly available service. As such you may wonder if it is safe to trust.
-      You can inspect the source code that this server is running by visiting this page: <a href="/_src">/_src</a>.
-      The deploys are immutable, so you can be sure that the code will never change.
-
-      <h2>Logging</h2>
-      The cloud hosting provider keeps log of all requests. That log is public and available on this page: <a href="/_logs">/_logs</a>.
-      It records the URL, origin IP, referer, and user-agent. None of the sensitive HTTP headers (including those used for
-      HTTP Basic Auth and HTTP Token auth) are ever logged.
     </html>
     `
     return send(res, 400, html)

@@ -1,9 +1,11 @@
 # @isomorphic-git/cors-proxy
 
-This is the software running on https://git-cors-proxy.now.sh, a free
-service for users of isomorphic-git so you can clone and push repos in the browser.
+This is the software running on https://isomorphic-git-cors-proxy.cleverapps.io/ -
+a free service (generously sponsored by [Clever Cloud](https://www.clever-cloud.com/))
+for users of [isomorphic-git](https://isomorphic-git.github.io) that enables cloning and pushing repos in the browser.
 
-It is derived from https://github.com/wmhilton/cors-buster with added restrictions to prevent abuse.
+It is derived from https://github.com/wmhilton/cors-buster with added restrictions to reduce the opportunity to abuse the proxy.
+Namely, it blocks requests that don't look like valid git requests.
 
 ## Installation
 
