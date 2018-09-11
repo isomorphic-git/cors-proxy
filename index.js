@@ -107,6 +107,7 @@ async function service (req, res) {
       body: (req.method !== 'GET' && req.method !== 'HEAD') ? req : undefined
     }
   )
+  res.statusCode = f.status
   for (let h of exposeHeaders) {
     if (h === 'content-length') continue
     if (f.headers.has(h)) {
