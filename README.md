@@ -13,12 +13,37 @@ Namely, it blocks requests that don't look like valid git requests.
 npm install @isomorphic-git/cors-proxy
 ```
 
+## CLI usage
+
+Start proxy on default port 9999:
+
+```sh
+cors-proxy start
+```
+
+Start proxy on a custom port:
+
+```sh
+cors-proxy start -p 9889
+```
+
+Start proxy in daemon mode. It will write the PID of the daemon process to `$PWD/cors-proxy.pid`:
+
+```sh
+cors-proxy start -d
+```
+
+Kill the process with the PID specified in `$PWD/cors-proxy.pid`:
+
+```sh
+cors-proxy stop
+```
+
 ## Configuration
 
 Environment variables:
-- `PORT` the port to listen to
+- `PORT` the port to listen to (if run with `npm start`)
 - `ALLOW_ORIGIN` the value for the 'Access-Control-Allow-Origin' CORS header
-
 
 ## License
 
