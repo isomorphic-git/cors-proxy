@@ -86,6 +86,9 @@ async function service (req, res) {
     // Don't waste my precious bandwidth
     return send(res, 403, '')
   }
+  if (req.method === 'OPTIONS') {
+    return send(res, 200, '')
+  }
 
   let headers = {}
   for (let h of allowHeaders) {
