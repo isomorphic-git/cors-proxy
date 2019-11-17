@@ -23,7 +23,7 @@
     "micro": "^9.3.3",
     "micro-cors": "0.1.1",
     "minimisted": "^2.0.0",
-    "node-fetch": "^2.3.0",
+    "node-fetch": "^2.6.0",
     "tree-kill": "^1.2.1"
   },
   "now": {
