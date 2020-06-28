@@ -15,6 +15,7 @@ const allowHeaders = [
   'content-length',
   'content-type',
   'dnt',
+  'git-protocol',
   'pragma',
   'range',
   'referer',
