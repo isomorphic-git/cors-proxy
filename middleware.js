@@ -35,6 +35,7 @@ const exposeHeaders = [
   'etag',
   'expires',
   'last-modified',
+  'location',
   'pragma',
   'server',
   'transfer-encoding',
@@ -125,10 +126,16 @@ module.exports = ({ origin, insecure_origins = [], authorization = noop } = {}) 
       `${protocol}://${pathdomain}/${remainingpath}`,
       {
         method: req.method,
+        redirect: 'manual',
         headers,
         body: (req.method !== 'GET' && req.method !== 'HEAD') ? req : undefined
       }
     ).then(f => {
+      if (f.headers.has('location')) {
+        // Modify the location so the client continues to use the proxy
+        let newUrl = f.headers.get('location').replace(/^https?:\//, '')
+        f.headers.set('location', newUrl)
+      }
       res.statusCode = f.status
       for (let h of exposeHeaders) {
         if (h === 'content-length') continue
