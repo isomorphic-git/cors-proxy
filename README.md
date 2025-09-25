@@ -42,38 +42,53 @@ cors-proxy stop
 ### CLI configuration
 
 Environment variables:
+
 - `PORT` the port to listen to (if run with `npm start`)
 - `ALLOW_ORIGIN` the value for the 'Access-Control-Allow-Origin' CORS header
 - `INSECURE_HTTP_ORIGINS` comma separated list of origins for which HTTP should be used instead of HTTPS (added to make developing against locally running git servers easier)
+
+## API
+
+A single function is exported that allows a request to be handled:
+
+```js
+import { createServer } from 'node:http';
+import handleRequest from '@isomorphic-git/cors-proxy';
+
+const server = createServer(handleRequest);
+
+server.listen(9000);
+```
 
 ## Installation on Kubernetes
 
 There is no official chart for this project, helm or otherwise. You can make your own, but keep in mind cors-proxy uses the Micro server, which will return a 403 error for any requests that do not have the user agent header.
 
 _Example:_
+
 ```yaml
-  containers:
-      - name: cors-proxy
-        image: node:lts-alpine
-        env:
-        - name: ALLOW_ORIGIN
-          value: https://mydomain.com
-        command:
-        - npx
-        args:
-        - '@isomorphic-git/cors-proxy'
-        - start
-        ports:
-        - containerPort: 9999
-          hostPort: 9999
-          name: proxy
-          protocol: TCP
-        livenessProbe:
-          tcpSocket:
-            port: proxy
-        readinessProbe:
-          tcpSocket:
-            port: proxy
+containers:
+  - name: cors-proxy
+    image: node:lts-alpine
+    env:
+      - name: ALLOW_ORIGIN
+        value: https://mydomain.com
+    command:
+      - npx
+    args:
+      - '@isomorphic-git/cors-proxy'
+      - start
+    ports:
+      - containerPort: 9999
+        hostPort: 9999
+        name: proxy
+        protocol: TCP
+    livenessProbe:
+      tcpSocket:
+        port: proxy
+    readinessProbe:
+      tcpSocket:
+        port: proxy
 ```
 
 ## License
