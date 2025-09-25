@@ -33,7 +33,7 @@ Start proxy in daemon mode.
 cors-proxy start
 ```
 
-Kill the process with the PID specified in `$PWD/cors-proxy.pid`:
+Kill the daemon process:
 
 ```sh
 cors-proxy stop
@@ -47,17 +47,63 @@ Environment variables:
 - `ALLOW_ORIGIN` the value for the 'Access-Control-Allow-Origin' CORS header
 - `INSECURE_HTTP_ORIGINS` comma separated list of origins for which HTTP should be used instead of HTTPS (added to make developing against locally running git servers easier)
 
-## API
+## Middleware usage
 
-A single function is exported that allows a request to be handled:
+You can also use the `cors-proxy` as a middleware in your own server.
 
 ```js
-import { createServer } from 'node:http';
-import handleRequest from '@isomorphic-git/cors-proxy';
+import express from 'express';
+import corsProxy from '@isomorphic-git/cors-proxy';
 
-const server = createServer(handleRequest);
+const app = express();
+const options = {};
 
-server.listen(9000);
+app.use(corsProxy(options));
+```
+
+### Middleware configuration
+
+_The middleware doesn't use the environment variables._ The options object supports the following properties:
+
+- `origin`: _string_. The value for the 'Access-Control-Allow-Origin' CORS header
+- `insecure_origins`: _string[]_. Array of origins for which HTTP should be used instead of HTTPS (added to make developing against locally running git servers easier)
+- `authorization`: _(req, res, next) => void_. A middleware function you can use to handle custom authorization. Is run after filtering for git-like requests and handling CORS but before the request is proxied.
+
+_Example:_
+
+```ts
+app.use(
+	corsProxy({
+		authorization: (req: Request, res: Response, next: NextFunction) => {
+			// proxied git HTTP requests already use the Authorization header for git credentials,
+			// so their [Company] credentials are inserted in the X-Authorization header instead.
+			if (getAuthorizedUser(req, 'X-Authorization')) {
+				return next();
+			} else {
+				return res.status(401).send("Unable to authenticate you with [Company]'s git proxy");
+			}
+		},
+	}),
+);
+
+// Only requests with a valid JSON Web Token will be proxied
+function getAuthorizedUser(req: Request, header: string = 'Authorization') {
+	const Authorization = req.get(header);
+
+	if (Authorization) {
+		const token = Authorization.replace('Bearer ', '');
+		try {
+			const verifiedToken = verify(token, env.APP_SECRET) as IToken;
+			if (verifiedToken) {
+				return {
+					id: verifiedToken.userId,
+				};
+			}
+		} catch (e) {
+			// noop
+		}
+	}
+}
 ```
 
 ## Installation on Kubernetes
