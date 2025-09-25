@@ -18,22 +18,22 @@ npm install @isomorphic-git/cors-proxy
 Start proxy on default port 9999:
 
 ```sh
-cors-proxy start
+cors-proxy run
 ```
 
 Start proxy on a custom port:
 
 ```sh
-cors-proxy start -p 9889
+cors-proxy run -p 9889
 ```
 
-Start proxy in daemon mode. It will write the PID of the daemon process to `$PWD/cors-proxy.pid`:
+Start proxy in daemon mode.
 
 ```sh
-cors-proxy start -d
+cors-proxy start
 ```
 
-Kill the process with the PID specified in `$PWD/cors-proxy.pid`:
+Kill the daemon process:
 
 ```sh
 cors-proxy stop
@@ -42,35 +42,35 @@ cors-proxy stop
 ### CLI configuration
 
 Environment variables:
+
 - `PORT` the port to listen to (if run with `npm start`)
 - `ALLOW_ORIGIN` the value for the 'Access-Control-Allow-Origin' CORS header
 - `INSECURE_HTTP_ORIGINS` comma separated list of origins for which HTTP should be used instead of HTTPS (added to make developing against locally running git servers easier)
-
 
 ## Middleware usage
 
 You can also use the `cors-proxy` as a middleware in your own server.
 
 ```js
-const express = require('express')
-const corsProxy = require('@isomorphic-git/cors-proxy/middleware.js')
+import express from 'express';
+import corsProxy from '@isomorphic-git/cors-proxy';
 
-const app = express()
-const options = {}
+const app = express();
+const options = {};
 
-app.use(corsProxy(options))
-
+app.use(corsProxy(options));
 ```
 
 ### Middleware configuration
 
-*The middleware doesn't use the environment variables.* The options object supports the following properties:
+_The middleware doesn't use the environment variables._ The options object supports the following properties:
 
 - `origin`: _string_. The value for the 'Access-Control-Allow-Origin' CORS header
 - `insecure_origins`: _string[]_. Array of origins for which HTTP should be used instead of HTTPS (added to make developing against locally running git servers easier)
 - `authorization`: _(req, res, next) => void_. A middleware function you can use to handle custom authorization. Is run after filtering for git-like requests and handling CORS but before the request is proxied.
 
 _Example:_
+
 ```ts
 app.use(
   corsProxy({
@@ -83,7 +83,7 @@ app.use(
         return res.status(401).send("Unable to authenticate you with [Company]'s git proxy");
       }
     },
-  })
+  }),
 );
 
 // Only requests with a valid JSON Web Token will be proxied
@@ -111,29 +111,30 @@ function getAuthorizedUser(req: Request, header: string = 'Authorization') {
 There is no official chart for this project, helm or otherwise. You can make your own, but keep in mind cors-proxy uses the Micro server, which will return a 403 error for any requests that do not have the user agent header.
 
 _Example:_
+
 ```yaml
-  containers:
-      - name: cors-proxy
-        image: node:lts-alpine
-        env:
-        - name: ALLOW_ORIGIN
-          value: https://mydomain.com
-        command:
-        - npx
-        args:
-        - '@isomorphic-git/cors-proxy'
-        - start
-        ports:
-        - containerPort: 9999
-          hostPort: 9999
-          name: proxy
-          protocol: TCP
-        livenessProbe:
-          tcpSocket:
-            port: proxy
-        readinessProbe:
-          tcpSocket:
-            port: proxy
+containers:
+  - name: cors-proxy
+    image: node:lts-alpine
+    env:
+      - name: ALLOW_ORIGIN
+        value: https://mydomain.com
+    command:
+      - npx
+    args:
+      - '@isomorphic-git/cors-proxy'
+      - start
+    ports:
+      - containerPort: 9999
+        hostPort: 9999
+        name: proxy
+        protocol: TCP
+    livenessProbe:
+      tcpSocket:
+        port: proxy
+    readinessProbe:
+      tcpSocket:
+        port: proxy
 ```
 
 ## License

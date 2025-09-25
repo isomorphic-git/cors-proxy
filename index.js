@@ -1,48 +1,187 @@
-'use strict'
-const url = require('url')
-const pkg = require('./package.json')
-const {send} = require('micro')
-const origin = process.env.ALLOW_ORIGIN
-const insecure_origins = (process.env.INSECURE_HTTP_ORIGINS || '').split(',')
-const middleware = require('./middleware.js')({ origin, insecure_origins })
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { Writable } from 'stream';
 
-async function service (req, res) {
-  middleware(req, res, () => {
-    let u = url.parse(req.url, true)
+const origin = process.env.ALLOW_ORIGIN || '*';
+const insecure_origins = (process.env.INSECURE_HTTP_ORIGINS || '').split(',');
 
-    if (u.pathname === '/ping') {
-      res.setHeader('content-type', 'text/plain')
-      return send(res, 200, "pong")
-    }
+const allowHeaders = [
+  'accept-encoding',
+  'accept-language',
+  'accept',
+  'access-control-allow-origin',
+  'authorization',
+  'cache-control',
+  'connection',
+  'content-length',
+  'content-type',
+  'dnt',
+  'git-protocol',
+  'pragma',
+  'range',
+  'referer',
+  'user-agent',
+  'x-authorization',
+  'x-http-method-override',
+  'x-requested-with',
+];
 
-    if (u.pathname === '/') {
-      res.setHeader('content-type', 'text/html')
-      let html = `<!DOCTYPE html>
-      <html>
-        <title>@thiagoelg/cors-proxy</title>
-        <h1>@thiagoelg/cors-proxy (forked from @isopmorphic-git/cors-proxy)</h1>
-        <p>This is the server software for users of <a href="https://isomorphic-git.org">isomorphic-git</a> that enables cloning and pushing repos in the browser.</p>
-        <p>The source code is hosted on Github at <a href="https://github.com/thiagoelg/cors-proxy">https://github.com/thiagoelg/cors-proxy</a></p>
-        <p>It can also be installed from npm with <code>npm install <a href="https://npmjs.org/package/${pkg.name}">@thiagoelg/cors-proxy</a></code></p>
+const exposeHeaders = [
+  'accept-ranges',
+  'age',
+  'cache-control',
+  'content-length',
+  'content-language',
+  'content-type',
+  'date',
+  'etag',
+  'expires',
+  'last-modified',
+  'location',
+  'pragma',
+  'server',
+  'transfer-encoding',
+  'vary',
+  'x-github-request-id',
+  'x-redirected-url',
+];
+const allowMethods = ['POST', 'GET', 'OPTIONS'];
 
-        <h2>Terms of Use</h2>
-        <p><b>This free service is provided to you AS IS with no guarantees.
-        By using this free service, you promise not to use excessive amounts of bandwidth.
-        </b></p>
+const maxAge = 60 * 60 * 24; // 24 hours
+const allowCredentials = false;
 
-        <p><b>If you are cloning or pushing large amounts of data your IP address may be banned.
-        Please run your own instance of the software if you need to make heavy use this service.</b></p>
+const landingPage = readFileSync(join(import.meta.dirname, 'index.html'), 'utf8').replaceAll(
+  '%allowed_origins%',
+  origin,
+);
 
-        <h2>Allowed Origins</h2>
-        This proxy allows git clone / fetch / push / getRemoteInfo requests from these domains: <code>${process.env.ALLOW_ORIGIN || '*'}</code>
-      </html>
-      `
-      return send(res, 400, html)
-    }
+/**
+ *
+ * @param {import('http').IncomingMessage} req
+ * @param {URL} u
+ */
+function isAllowed(req, u) {
+  const isInfoRefs =
+    u.pathname.endsWith('/info/refs') &&
+    (u.searchParams.get('service') === 'git-upload-pack' || u.searchParams.get('service') === 'git-receive-pack');
 
-    // Don't waste my precious bandwidth
-    return send(res, 403, '')
-  })
+  switch (req.method) {
+    case 'OPTIONS':
+      if (isInfoRefs) return true;
+      if (!req.headers['access-control-request-headers'].includes('content-type')) return false;
+      return u.pathname.endsWith('git-upload-pack') || u.pathname.endsWith('git-receive-pack');
+    case 'POST':
+      return (
+        // pull
+        (req.headers['content-type'] === 'application/x-git-upload-pack-request' &&
+          u.pathname.endsWith('git-upload-pack')) ||
+        // push
+        (req.headers['content-type'] === 'application/x-git-receive-pack-request' &&
+          u.pathname.endsWith('git-receive-pack'))
+      );
+    case 'GET':
+      return isInfoRefs;
+    default:
+      return false;
+  }
 }
 
-module.exports = service
+/**
+ *
+ * @param {import('http').IncomingMessage} req
+ * @param {import('http').ServerResponse} res
+ * @param {(() => any)?} next
+ * @returns
+ */
+export default function handleRequest(req, res, next) {
+  const u = new URL(req.url, `https://0.0.0.0:${req.socket.localPort}/`);
+  const isMiddleware = typeof next === 'function';
+
+  // CORS
+
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  if (allowCredentials) {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  if (exposeHeaders.length) {
+    res.setHeader('Access-Control-Expose-Headers', exposeHeaders.join(','));
+  }
+
+  const preFlight = req.method === 'OPTIONS';
+  if (preFlight) {
+    res.setHeader('Access-Control-Allow-Methods', allowMethods.join(','));
+    res.setHeader('Access-Control-Allow-Headers', allowHeaders.join(','));
+    res.setHeader('Access-Control-Max-Age', String(maxAge));
+  }
+
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 200;
+    res.end();
+    return;
+  }
+
+  // Default landing page
+  if (u.pathname === '/') {
+    if (isMiddleware) return next();
+    res.setHeader('content-type', 'text/html');
+    res.statusCode = 400;
+    res.end(landingPage);
+    return;
+  }
+
+  if (!isAllowed(req, u)) {
+    if (isMiddleware) return next();
+    res.statusCode = 403;
+    res.end();
+    return;
+  }
+
+  if (process.env.DEBUG) console.log(req.method, req.url);
+
+  const headers = {};
+  for (let h of allowHeaders) {
+    if (req.headers[h]) {
+      headers[h] = req.headers[h];
+    }
+  }
+
+  // GitHub uses user-agent sniffing for git/* and changes its behavior which is frustrating
+  if (!headers['user-agent']?.startsWith('git/')) {
+    headers['user-agent'] = 'git/@isomorphic-git/cors-proxy';
+  }
+
+  let [, pathdomain, remainingpath] = u.pathname.match(/\/([^\/]*)\/(.*)/);
+  const protocol = insecure_origins.includes(pathdomain) ? 'http' : 'https';
+
+  fetch(`${protocol}://${pathdomain}/${remainingpath}${u.search}`, {
+    method: req.method,
+    redirect: 'manual',
+    headers,
+    body: req.method !== 'GET' && req.method !== 'HEAD' ? req : undefined,
+    duplex: 'half',
+  })
+    .then((f) => {
+      if (f.headers.has('location')) {
+        // Modify the location so the client continues to use the proxy
+        let newUrl = f.headers.get('location').replace(/^https?:\//, '');
+        f.headers.set('location', newUrl);
+      }
+      res.statusCode = f.status;
+      for (let h of exposeHeaders) {
+        if (h === 'content-length') continue;
+        if (f.headers.has(h)) {
+          res.setHeader(h, f.headers.get(h));
+        }
+      }
+      if (f.redirected) {
+        res.setHeader('x-redirected-url', f.url);
+      }
+      return f.body.pipeTo(Writable.toWeb(res));
+    })
+    .catch((e) => {
+      console.error(e);
+      if (isMiddleware) return next();
+      res.statusCode = 502;
+      res.end();
+    });
+}

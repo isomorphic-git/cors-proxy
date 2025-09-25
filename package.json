@@ -1,40 +1,33 @@
 {
-  "name": "@thiagoelg/cors-proxy",
-  "version": "0.0.2",
+  "name": "@isomorphic-git/cors-proxy",
+  "version": "0.0.0-development",
   "description": "Proxy clone and push requests for the browser",
   "main": "index.js",
   "bin": "bin.js",
+  "type": "module",
   "scripts": {
-    "start": "cross-env micro --listen=tcp://0.0.0.0:$PORT",
-    "dev": "micro-dev",
+    "start": "cors-proxy start",
+    "dev": "cors-proxy run",
     "travis-deploy-once": "travis-deploy-once --pro",
     "semantic-release": "semantic-release"
   },
   "keywords": [],
   "author": "William Hilton <wmhilton@gmail.com>",
+  "contributors": [
+    "James Prevett <jp@jamespre.dev>"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thiagoelg/cors-proxy.git"
-  },
-  "dependencies": {
-    "cross-env": "^5.2.0",
-    "daemonize-process": "^1.0.9",
-    "micro": "^9.3.3",
-    "micro-cors": "0.1.1",
-    "minimisted": "^2.0.1",
-    "node-fetch": "^2.6.11",
-    "tree-kill": "^1.2.2"
+    "url": "https://github.com/isomorphic-git/cors-proxy.git"
   },
   "now": {
     "public": true
   },
-  "overrides": {
-    "minimist": "^1.2.6"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "micro-dev": "^3.1.0",
-    "semantic-release": "22.0.5"
+    "prettier": "^3.6.2",
+    "semantic-release": "^24.2.8"
   },
   "publishConfig": {
     "access": "public"
