@@ -73,36 +73,36 @@ _Example:_
 
 ```ts
 app.use(
-	corsProxy({
-		authorization: (req: Request, res: Response, next: NextFunction) => {
-			// proxied git HTTP requests already use the Authorization header for git credentials,
-			// so their [Company] credentials are inserted in the X-Authorization header instead.
-			if (getAuthorizedUser(req, 'X-Authorization')) {
-				return next();
-			} else {
-				return res.status(401).send("Unable to authenticate you with [Company]'s git proxy");
-			}
-		},
-	}),
+  corsProxy({
+    authorization: (req: Request, res: Response, next: NextFunction) => {
+      // proxied git HTTP requests already use the Authorization header for git credentials,
+      // so their [Company] credentials are inserted in the X-Authorization header instead.
+      if (getAuthorizedUser(req, 'X-Authorization')) {
+        return next();
+      } else {
+        return res.status(401).send("Unable to authenticate you with [Company]'s git proxy");
+      }
+    },
+  }),
 );
 
 // Only requests with a valid JSON Web Token will be proxied
 function getAuthorizedUser(req: Request, header: string = 'Authorization') {
-	const Authorization = req.get(header);
+  const Authorization = req.get(header);
 
-	if (Authorization) {
-		const token = Authorization.replace('Bearer ', '');
-		try {
-			const verifiedToken = verify(token, env.APP_SECRET) as IToken;
-			if (verifiedToken) {
-				return {
-					id: verifiedToken.userId,
-				};
-			}
-		} catch (e) {
-			// noop
-		}
-	}
+  if (Authorization) {
+    const token = Authorization.replace('Bearer ', '');
+    try {
+      const verifiedToken = verify(token, env.APP_SECRET) as IToken;
+      if (verifiedToken) {
+        return {
+          id: verifiedToken.userId,
+        };
+      }
+    } catch (e) {
+      // noop
+    }
+  }
 }
 ```
 

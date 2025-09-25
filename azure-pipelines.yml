@@ -1,32 +1,32 @@
 jobs:
-- job: Linux
+  - job: Linux
 
-  pool:
-    vmImage: 'ubuntu-latest'
+    pool:
+      vmImage: 'ubuntu-latest'
 
-  steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '22.x'
-    displayName: 'Install Node.js'
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '22.x'
+        displayName: 'Install Node.js'
 
-  - script: npm ci
-    displayName: 'Install dependencies'
+      - script: npm ci
+        displayName: 'Install dependencies'
 
-  - script: npm pack
-    displayName: 'Prepare installable tarball'
-    condition: succeededOrFailed()
+      - script: npm pack
+        displayName: 'Prepare installable tarball'
+        condition: succeededOrFailed()
 
-  - task: PublishBuildArtifacts@1
-    displayName: 'Save npm-tarball.tgz'
-    condition: and(succeededOrFailed(), ne(variables['system.pullrequest.isfork'], true))
-    inputs:
-      artifactName: 'npm-tarball.tgz'
-      PathtoPublish: '$(System.DefaultWorkingDirectory)/isomorphic-git-cors-proxy-0.0.0-development.tgz'
+      - task: PublishBuildArtifacts@1
+        displayName: 'Save npm-tarball.tgz'
+        condition: and(succeededOrFailed(), ne(variables['system.pullrequest.isfork'], true))
+        inputs:
+          artifactName: 'npm-tarball.tgz'
+          PathtoPublish: '$(System.DefaultWorkingDirectory)/isomorphic-git-cors-proxy-0.0.0-development.tgz'
 
-  - script: npm run semantic-release
-    displayName: 'Publish to npm'
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-    env:
-      GH_TOKEN: $(GITHUB_TOKEN)
-      NPM_TOKEN: $(Npm.Token)
+      - script: npm run semantic-release
+        displayName: 'Publish to npm'
+        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+        env:
+          GH_TOKEN: $(GITHUB_TOKEN)
+          NPM_TOKEN: $(Npm.Token)

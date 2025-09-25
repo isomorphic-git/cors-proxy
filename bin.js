@@ -11,20 +11,20 @@ import handleRequest from './index.js';
 const temp = tmpdir();
 
 const {
-	positionals: [cmd],
-	values: { port, help, pid: pidFile, restart },
+  positionals: [cmd],
+  values: { port, help, pid: pidFile, restart },
 } = parseArgs({
-	options: {
-		help: { type: 'boolean', short: 'h', default: false },
-		port: { type: 'string', short: 'p', default: '9999' },
-		pid: { type: 'string', default: join(temp, 'cors-proxy.pid') },
-		restart: { type: 'boolean', short: 'r', default: false },
-	},
-	allowPositionals: true,
+  options: {
+    help: { type: 'boolean', short: 'h', default: false },
+    port: { type: 'string', short: 'p', default: '9999' },
+    pid: { type: 'string', default: join(temp, 'cors-proxy.pid') },
+    restart: { type: 'boolean', short: 'r', default: false },
+  },
+  allowPositionals: true,
 });
 
 if (cmd == 'help' || help || !cmd) {
-	console.log(`Usage: ${process.argv0} [...options] <command>
+  console.log(`Usage: ${process.argv0} [...options] <command>
 
 Commands:
     run                 Run the CORS proxy server in the foreground
@@ -39,78 +39,78 @@ Options:
 }
 
 function getPID(strict) {
-	let pid;
-	try {
-		pid = parseInt(readFileSync(pidFile, 'utf8'));
-	} catch (e) {
-		if (e.code === 'ENOENT') {
-			console.error('No PID file');
-			process.exit(strict ? 2 : 0);
-		}
+  let pid;
+  try {
+    pid = parseInt(readFileSync(pidFile, 'utf8'));
+  } catch (e) {
+    if (e.code === 'ENOENT') {
+      console.error('No PID file');
+      process.exit(strict ? 2 : 0);
+    }
 
-		console.error('Found existing PID file but could not read it');
-		process.exit(strict ? 13 : 0);
-	}
+    console.error('Found existing PID file but could not read it');
+    process.exit(strict ? 13 : 0);
+  }
 
-	try {
-		process.kill(pid, 0);
-		return [pid, true];
-	} catch (e) {
-		return [pid, false];
-	}
+  try {
+    process.kill(pid, 0);
+    return [pid, true];
+  } catch (e) {
+    return [pid, false];
+  }
 }
 
 switch (cmd) {
-	case 'run': {
-		const server = createServer(handleRequest);
-		server.listen(port, () => console.log('Listening on port', port));
-		process.on('beforeExit', () => {
-			console.log('Shutting down server');
-			server.close();
-			unlinkSync(pidFile);
-		});
-		break;
-	}
-	case 'start': {
-		if (existsSync(pidFile)) {
-			const [pid, processExists] = getPID(true);
+  case 'run': {
+    const server = createServer(handleRequest);
+    server.listen(port, () => console.log('Listening on port', port));
+    process.on('beforeExit', () => {
+      console.log('Shutting down server');
+      server.close();
+      unlinkSync(pidFile);
+    });
+    break;
+  }
+  case 'start': {
+    if (existsSync(pidFile)) {
+      const [pid, processExists] = getPID(true);
 
-			if (!processExists) {
-				unlinkSync(pidFile);
-				console.error('Removed stale PID file');
-			} else if (restart) {
-				process.kill(pid);
-				console.error('Stopped existing daemon');
-			} else {
-				console.error(`Daemon is already running (pid is ${pid})`);
-				process.exit(16);
-			}
-		}
+      if (!processExists) {
+        unlinkSync(pidFile);
+        console.error('Removed stale PID file');
+      } else if (restart) {
+        process.kill(pid);
+        console.error('Stopped existing daemon');
+      } else {
+        console.error(`Daemon is already running (pid is ${pid})`);
+        process.exit(16);
+      }
+    }
 
-		const daemon = spawn(
-			import.meta.filename,
-			['run', port && `--port=${port}`].filter((a) => a),
-			{ stdio: 'ignore', detached: true },
-		);
-		daemon.unref();
-		console.log('Started CORS proxy daemon with PID', daemon.pid);
-		writeFileSync(pidFile, daemon.pid.toString());
-		break;
-	}
-	case 'stop': {
-		const [pid, processExists] = getPID(true);
+    const daemon = spawn(
+      import.meta.filename,
+      ['run', port && `--port=${port}`].filter((a) => a),
+      { stdio: 'ignore', detached: true },
+    );
+    daemon.unref();
+    console.log('Started CORS proxy daemon with PID', daemon.pid);
+    writeFileSync(pidFile, daemon.pid.toString());
+    break;
+  }
+  case 'stop': {
+    const [pid, processExists] = getPID(true);
 
-		if (processExists) process.kill(pid);
-		else {
-			unlinkSync(pidFile);
-			console.error('Removed stale PID file');
-		}
-		break;
-	}
-	case 'status': {
-		const [pid, processExists] = getPID(false);
-		if (processExists) console.error('Daemon is running as pid', pid);
-		else console.error('Not running, stale PID file');
-		break;
-	}
+    if (processExists) process.kill(pid);
+    else {
+      unlinkSync(pidFile);
+      console.error('Removed stale PID file');
+    }
+    break;
+  }
+  case 'status': {
+    const [pid, processExists] = getPID(false);
+    if (processExists) console.error('Daemon is running as pid', pid);
+    else console.error('Not running, stale PID file');
+    break;
+  }
 }
