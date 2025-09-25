@@ -90,10 +90,12 @@ function isAllowed(req, u) {
  *
  * @param {import('http').IncomingMessage} req
  * @param {import('http').ServerResponse} res
+ * @param {(() => any)?} next
  * @returns
  */
-export default function handleRequest(req, res) {
+export default function handleRequest(req, res, next) {
 	const u = new URL(req.url, `https://0.0.0.0:${req.socket.localPort}/`);
+	const isMiddleware = typeof next === 'function';
 
 	// CORS
 
@@ -120,6 +122,7 @@ export default function handleRequest(req, res) {
 
 	// Default landing page
 	if (u.pathname === '/') {
+		if (isMiddleware) return next();
 		res.setHeader('content-type', 'text/html');
 		res.statusCode = 400;
 		res.end(landingPage);
@@ -127,6 +130,7 @@ export default function handleRequest(req, res) {
 	}
 
 	if (!isAllowed(req, u)) {
+		if (isMiddleware) return next();
 		res.statusCode = 403;
 		res.end();
 		return;
@@ -175,8 +179,9 @@ export default function handleRequest(req, res) {
 			return f.body.pipeTo(Writable.toWeb(res));
 		})
 		.catch((e) => {
-			res.statusCode = 502;
 			console.error(e);
+			if (isMiddleware) return next();
+			res.statusCode = 502;
 			res.end();
 		});
 }
