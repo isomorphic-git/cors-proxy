@@ -16,7 +16,7 @@ const {
 } = parseArgs({
   options: {
     help: { type: 'boolean', short: 'h', default: false },
-    port: { type: 'string', short: 'p', default: '9999' },
+    port: { type: 'string', short: 'p', default: process.env.PORT || '9999' },
     pid: { type: 'string', default: join(temp, 'cors-proxy.pid') },
     restart: { type: 'boolean', short: 'r', default: false },
   },
