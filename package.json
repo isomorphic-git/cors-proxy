@@ -6,7 +6,7 @@
   "bin": "bin.js",
   "type": "module",
   "scripts": {
-    "start": "cors-proxy start",
+    "start": "node bin.js run",
     "dev": "cors-proxy run",
     "travis-deploy-once": "travis-deploy-once --pro",
     "semantic-release": "semantic-release"

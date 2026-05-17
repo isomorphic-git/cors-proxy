@@ -8,5 +8,5 @@ RUN chown -R node:node /srv
 USER node
 EXPOSE 80
 ENV PORT=80
-CMD [ "sh", "-c", "exec node bin.js run --port=${PORT:-80}" ]
+CMD [ "node", "bin.js", "run" ]
 
