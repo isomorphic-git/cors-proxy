@@ -87,10 +87,18 @@ switch (cmd) {
       }
     }
 
+    // Spawn `node <this script> run [...]` rather than `<this script> run`
+    // directly. Invoking the .js file as the executable relies on the
+    // `#!/usr/bin/env node` shebang and therefore only works on Unix-like
+    // shells; on Windows, .js files are not directly executable through
+    // CreateProcess and the spawn call fails. Using `process.execPath`
+    // (the currently-running `node` binary) is portable across platforms.
+    // `windowsHide: true` prevents the detached child from flashing a
+    // console window on Windows.
     const daemon = spawn(
-      import.meta.filename,
-      ['run', port && `--port=${port}`].filter((a) => a),
-      { stdio: 'ignore', detached: true },
+      process.execPath,
+      [import.meta.filename, 'run', port && `--port=${port}`].filter((a) => a),
+      { stdio: 'ignore', detached: true, windowsHide: true },
     );
     daemon.unref();
     console.log('Started CORS proxy daemon with PID', daemon.pid);
