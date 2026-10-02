@@ -161,16 +161,17 @@ export default function handleRequest(req, res, next) {
     duplex: 'half',
   })
     .then((f) => {
-      if (f.headers.has('location')) {
-        // Modify the location so the client continues to use the proxy
-        let newUrl = f.headers.get('location').replace(/^https?:\//, '');
-        f.headers.set('location', newUrl);
-      }
       res.statusCode = f.status;
       for (let h of exposeHeaders) {
         if (h === 'content-length') continue;
         if (f.headers.has(h)) {
-          res.setHeader(h, f.headers.get(h));
+          if (h === 'location') {
+            // Modify the location so the client continues to use the proxy
+            let newUrl = f.headers.get('location').replace(/^https?:\//, '');
+            res.setHeader('location', newUrl);
+          } else {
+            res.setHeader(h, f.headers.get(h));
+          }
         }
       }
       if (f.redirected) {
